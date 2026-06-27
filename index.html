@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BUNNY LAB — Construtor + Biblioteca</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{--bg:#141318;--surface:#1d1c23;--surface2:#26242d;--line:#332f3c;--ink:#ECEAF2;--mute:#9a93a8;--accent:#F0407F;--accent2:#23E5C8;--radius:14px}
+  *{box-sizing:border-box}html,body{margin:0;padding:0}
+  body{background:radial-gradient(900px 500px at 85% -10%,rgba(240,64,127,.10),transparent 60%),radial-gradient(700px 500px at -5% 110%,rgba(35,229,200,.08),transparent 55%),var(--bg);color:var(--ink);font-family:ui-sans-serif,system-ui,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;min-height:100vh;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1180px;margin:0 auto;padding:24px 20px 64px}
+  header{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;margin-bottom:14px}
+  h1{font-size:clamp(24px,4vw,38px);font-weight:800;letter-spacing:-.02em;margin:0;text-transform:uppercase}
+  h1 .dot{color:var(--accent)}
+  .kbd{font-size:11px;color:var(--mute)}
+  .tabs{display:flex;gap:8px;margin-bottom:18px}
+  .tab{padding:9px 18px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--mute);font-weight:700;font-size:13.5px;cursor:pointer}
+  .tab.on{background:var(--accent);border-color:var(--accent);color:#fff}
+  .banner{border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:12px 15px;margin-bottom:18px;font-size:13px;line-height:1.5}
+  .banner.warn{border-color:#7a5b2a;background:#241f16}
+  .banner.ok{border-color:#2a6e5e;background:#16241f}
+  .banner code{background:var(--surface2);padding:1px 6px;border-radius:5px}
+  .grid{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:26px;align-items:start}
+  @media(max-width:880px){.grid{grid-template-columns:1fr}}
+  .stage{position:sticky;top:20px}
+  .canvas-box{position:relative;border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;aspect-ratio:1/1;width:100%;
+    background-image:linear-gradient(45deg,#23222a 25%,transparent 25%),linear-gradient(-45deg,#23222a 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#23222a 75%),linear-gradient(-45deg,transparent 75%,#23222a 75%);
+    background-size:26px 26px;background-position:0 0,0 13px,13px -13px,-13px 0;background-color:#1b1a20}
+  canvas{position:absolute;inset:0;width:100%;height:100%}
+  .empty-hint{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--mute);font-size:14px;text-align:center;padding:30px;pointer-events:none}
+  .actions{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap}
+  button{font-family:inherit;cursor:pointer;border:1px solid var(--line);background:var(--surface2);color:var(--ink);padding:11px 16px;border-radius:10px;font-size:14px;font-weight:600;transition:.15s;display:inline-flex;align-items:center;gap:8px}
+  button:hover{border-color:var(--accent);transform:translateY(-1px)}
+  button:focus-visible{outline:2px solid var(--accent2);outline-offset:2px}
+  .btn-primary{background:var(--accent);border-color:var(--accent);color:#fff}.btn-primary:hover{filter:brightness(1.08)}
+  .btn-ghost{background:transparent}
+  .traits{margin-top:16px;font-size:12.5px;color:var(--mute);line-height:1.8}.traits b{color:var(--ink);font-weight:600}
+  .panel{display:flex;flex-direction:column;gap:12px}
+  .layer{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:13px 14px}
+  .layer-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
+  .layer-title{display:flex;align-items:center;gap:9px;font-weight:700;font-size:13.5px}
+  .zbadge{font-size:10px;color:var(--mute);border:1px solid var(--line);border-radius:6px;padding:2px 6px}
+  .rail{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;scrollbar-width:thin}
+  .rail::-webkit-scrollbar{height:6px}.rail::-webkit-scrollbar-thumb{background:var(--line);border-radius:3px}
+  .chip{position:relative;flex:0 0 auto;width:56px;height:56px;border-radius:9px;border:2px solid transparent;cursor:pointer;overflow:hidden;background-color:#15141a;
+    background-image:linear-gradient(45deg,#2a2933 25%,transparent 25%),linear-gradient(-45deg,#2a2933 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#2a2933 75%),linear-gradient(-45deg,transparent 75%,#2a2933 75%);
+    background-size:14px 14px;background-position:0 0,0 7px,7px -7px,-7px 0}
+  .chip img{width:100%;height:100%;object-fit:contain}
+  .chip.sel{border-color:var(--accent)}
+  .chip-none{display:flex;align-items:center;justify-content:center;color:var(--mute);font-size:11px;background:#15141a;background-image:none}
+  .chip-solid{display:flex;align-items:center;justify-content:center;font-size:9px;color:#fff;text-shadow:0 1px 2px #000;background-image:none}
+  .recolor{margin-top:12px;border-top:1px dashed var(--line);padding-top:11px}
+  .recolor-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px}
+  .recolor-top span{font-size:11.5px;color:var(--mute);text-transform:uppercase;letter-spacing:.04em}
+  .swatches{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:11px}
+  .sw{width:26px;height:26px;border-radius:50%;border:2px solid var(--line);cursor:pointer;padding:0}
+  .sw:hover{transform:scale(1.12);border-color:var(--ink)}
+  .sld{display:grid;grid-template-columns:58px 1fr 36px;align-items:center;gap:9px;margin:7px 0}
+  .sld label{font-size:11.5px;color:var(--mute)}.sld output{font-size:11px;color:var(--ink);text-align:right}
+  input[type=range]{width:100%;accent-color:var(--accent);height:4px}
+  .reset-c{font-size:11px;color:var(--accent2);background:none;border:none;padding:0;cursor:pointer}
+  .colorpick{display:flex;align-items:center;gap:9px;margin-top:4px}
+  .colorpick input[type=color]{width:42px;height:30px;border:1px solid var(--line);border-radius:8px;background:none;cursor:pointer;padding:2px}
+  .colorpick small{font-size:11px;color:var(--mute)}
+  /* biblioteca */
+  .lib{display:none}
+  .lib.on{display:block}
+  .builder.off{display:none}
+  .upbox{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:18px;margin-bottom:20px;max-width:640px}
+  .row{display:flex;gap:12px;flex-wrap:wrap;align-items:end;margin-bottom:14px}
+  .field{display:flex;flex-direction:column;gap:5px}
+  .field label{font-size:11.5px;color:var(--mute)}
+  select,.field input[type=text]{font-family:inherit;background:var(--surface2);border:1px solid var(--line);color:var(--ink);border-radius:9px;padding:9px 11px;font-size:13.5px}
+  .drop{border:1.5px dashed var(--line);border-radius:11px;padding:18px;text-align:center;color:var(--mute);font-size:13px;cursor:pointer}
+  .drop:hover{border-color:var(--accent);color:var(--ink)}
+  .status{font-size:12.5px;color:var(--accent2);margin-top:10px;min-height:18px}
+  .libcat{margin-bottom:22px}
+  .libcat h3{font-size:14px;margin:0 0 10px;display:flex;align-items:center;gap:8px}
+  .libcat .count{font-size:11px;color:var(--mute);border:1px solid var(--line);border-radius:6px;padding:1px 7px}
+  .libgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:12px}
+  .libitem{background:var(--surface);border:1px solid var(--line);border-radius:11px;padding:8px;position:relative}
+  .libitem .thumb{width:100%;aspect-ratio:1;border-radius:8px;object-fit:contain;background-color:#15141a;
+    background-image:linear-gradient(45deg,#2a2933 25%,transparent 25%),linear-gradient(-45deg,#2a2933 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#2a2933 75%),linear-gradient(-45deg,transparent 75%,#2a2933 75%);background-size:12px 12px;background-position:0 0,0 6px,6px -6px,-6px 0}
+  .libitem .nm{font-size:11px;margin-top:6px;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .libitem .rr{font-size:10px;color:var(--mute)}
+  .libitem .del{position:absolute;top:6px;right:6px;width:22px;height:22px;border-radius:7px;border:none;background:rgba(0,0,0,.6);color:#fff;font-size:12px;padding:0;display:flex;align-items:center;justify-content:center}
+  .footnote{margin-top:26px;font-size:12px;color:var(--mute);line-height:1.6;border-top:1px solid var(--line);padding-top:16px}
+  .footnote code{background:var(--surface2);padding:2px 6px;border-radius:5px;color:var(--ink)}
+  input[type=file]{display:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header><h1>Bunny Lab<span class="dot">.</span></h1><span class="kbd">construtor + biblioteca · Supabase</span></header>
+  <div class="tabs">
+    <button class="tab on" id="tabBuild">🐰 Construtor</button>
+    <button class="tab" id="tabLib">📚 Biblioteca</button>
+  </div>
+  <div id="banner"></div>
+
+  <!-- CONSTRUTOR -->
+  <div class="builder" id="builderView">
+    <div class="grid">
+      <div class="stage">
+        <div class="canvas-box"><canvas id="cv" width="2048" height="2048"></canvas><div class="empty-hint" id="hint">Sua biblioteca aparece aqui &rarr;</div></div>
+        <div class="actions">
+          <button class="btn-primary" id="dl">⬇ Baixar PNG</button>
+          <button id="rand">⚄ Sortear</button>
+          <button class="btn-ghost" id="clear">Limpar seleção</button>
+        </div>
+        <div class="traits" id="traits"></div>
+      </div>
+      <div class="panel" id="panel"></div>
+    </div>
+  </div>
+
+  <!-- BIBLIOTECA -->
+  <div class="lib" id="libView">
+    <div class="upbox">
+      <div class="row">
+        <div class="field"><label>Categoria</label><select id="upCat"></select></div>
+        <div class="field"><label>Raridade</label>
+          <select id="upRar"><option value="Comum">Comum (40)</option><option value="Incomum">Incomum (18)</option><option value="Raro">Raro (8)</option><option value="Lendário">Lendário (3)</option></select>
+        </div>
+      </div>
+      <div class="drop" id="drop">Clique ou arraste PNG(s) aqui para salvar na categoria escolhida</div>
+      <input type="file" id="upFile" accept="image/png,image/webp" multiple>
+      <div class="status" id="upStatus"></div>
+    </div>
+    <div id="libList"></div>
+  </div>
+
+  <p class="footnote"><b>Configuração do Supabase:</b> edite o bloco <code>CONFIG</code> no topo do &lt;script&gt; com a URL e a anon key do seu projeto. Rode o <code>supabase_setup.sql</code> e crie o bucket conforme o <code>SUPABASE_INSTRUCOES.md</code>.</p>
+</div>
+
+<script>
+/* ===================================================================== */
+/* ====== CONFIG — COLE AQUI AS SUAS CHAVES DO SUPABASE ================= */
+const CONFIG = {
+  SUPABASE_URL:  "https://dozrvsllqxmcilwcmjbk.supabase.co",   // <-- troque
+  SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRvenJ2c2xscXhtY2lsd2NtamJrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI1NzU5NzgsImV4cCI6MjA5ODE1MTk3OH0.k3hEJSwqCCQcBaTo50ewbKWdwQmrfLpNVhZGIPU9tq8",             // <-- troque
+  BUCKET: "bunny-pieces",                              // nome do bucket (Storage)
+  TABLE:  "pieces"                                     // nome da tabela
+};
+/* ===================================================================== */
+
+const LAYERS=[
+ {key:'fundo',name:'Fundo',z:0,optional:true,solid:true},
+ {key:'corpo',name:'Corpo (cor do pelo)',z:1,optional:false,recolor:'pelo'},
+ {key:'boca',name:'Boca',z:2,optional:true},
+ {key:'olhos',name:'Olhos',z:3,optional:true,recolor:'iris'},
+ {key:'roupa',name:'Roupa',z:4,optional:true},
+ {key:'pescoco',name:'Pescoço (corrente)',z:5,optional:true},
+ {key:'orelha',name:'Orelha (brinco)',z:6,optional:true},
+ {key:'cabeca',name:'Cabeça (chapéu/coroa)',z:7,optional:true},
+ {key:'rosto',name:'Rosto (óculos/visor)',z:8,optional:true},
+ {key:'mao',name:'Mão / Item',z:9,optional:true},
+];
+const RAR_WEIGHT={Comum:40,Incomum:18,Raro:8,"Lendário":3};
+const state={}; LAYERS.forEach(l=>state[l.key]={options:[],sel:-1,solid:null});
+const adjust={corpo:{h:0,s:100,l:0},olhos:{h:0,s:100,l:0}};
+const FUR_PRESETS=[{name:'Marrom',c:'#9b6b43',a:{h:0,s:100,l:0}},{name:'Cinza',c:'#9a9a9a',a:{h:0,s:8,l:6}},{name:'Creme',c:'#e8d8b8',a:{h:18,s:42,l:26}},{name:'Preto',c:'#2b2b2b',a:{h:0,s:14,l:-34}},{name:'Dourado',c:'#d9a526',a:{h:14,s:175,l:14}},{name:'Azulado',c:'#7d93a8',a:{h:175,s:55,l:8}},{name:'Rosado',c:'#c98fa0',a:{h:-28,s:80,l:14}},{name:'Verde',c:'#8a9a5b',a:{h:78,s:60,l:6}}];
+const EYE_PRESETS=[{name:'Original',c:'#8a6b4a',a:{h:0,s:100,l:0}},{name:'Azul',c:'#3b7fd4',a:{h:150,s:135,l:6}},{name:'Verde',c:'#3fae5e',a:{h:95,s:135,l:4}},{name:'Âmbar',c:'#d79a2b',a:{h:30,s:140,l:8}},{name:'Vermelho',c:'#c0392b',a:{h:-25,s:160,l:2}},{name:'Roxo',c:'#7d4fd0',a:{h:200,s:135,l:4}},{name:'Ciano',c:'#2fc6c6',a:{h:168,s:140,l:8}}];
+const FUNDO_CORES=['#C8C8C8','#1b1a20','#ffffff','#F0407F','#23E5C8','#3A2E55','#2E75B6','#1F4E79'];
+
+const cv=document.getElementById('cv'),ctx=cv.getContext('2d');
+const panel=document.getElementById('panel'),hint=document.getElementById('hint'),traitsEl=document.getElementById('traits');
+const recolorCache=new WeakMap();
+let sb=null, dbOn=false;
+
+/* ---------- Supabase ---------- */
+function initDB(){
+ const configured = CONFIG.SUPABASE_URL.indexOf('SEU-PROJETO')===-1 && CONFIG.SUPABASE_ANON_KEY.indexOf('SUA_ANON')===-1;
+ const b=document.getElementById('banner');
+ if(!configured){b.innerHTML='<div class="banner warn">⚙ <b>Supabase não configurado.</b> O construtor funciona em modo local (suas peças não ficam salvas). Edite o bloco <code>CONFIG</code> no código para ativar a biblioteca.</div>';return;}
+ try{ sb=window.supabase.createClient(CONFIG.SUPABASE_URL,CONFIG.SUPABASE_ANON_KEY); dbOn=true;
+   b.innerHTML='<div class="banner ok">✓ <b>Conectado ao Supabase.</b> Suas peças ficam salvas — não precisa subir de novo.</div>';
+ }catch(e){ b.innerHTML='<div class="banner warn">⚠ Erro ao conectar no Supabase: '+e.message+'</div>'; }
+}
+function loadImg(src){return new Promise((res,rej)=>{const i=new Image();i.crossOrigin='anonymous';i.onload=()=>res(i);i.onerror=rej;i.src=src;});}
+async function loadFromDB(){
+ if(!dbOn)return;
+ const {data,error}=await sb.from(CONFIG.TABLE).select('*').order('created_at',{ascending:true});
+ if(error){document.getElementById('banner').innerHTML='<div class="banner warn">⚠ Erro lendo a tabela: '+error.message+'</div>';return;}
+ LAYERS.forEach(l=>state[l.key].options=[]);
+ for(const row of data){ if(!state[row.category])continue;
+   try{const img=await loadImg(row.url); state[row.category].options.push({name:row.name,img,dbId:row.id,path:row.storage_path,rarity:row.rarity,weight:row.weight});}catch(e){}
+ }
+ LAYERS.forEach(l=>{if(!l.optional&&state[l.key].options.length&&state[l.key].sel===-1)state[l.key].sel=0;});
+ buildPanel();refresh();buildLibrary();
+}
+
+/* ---------- cor (recolor) ---------- */
+function rgb2hsl(r,g,b){r/=255;g/=255;b/=255;const mx=Math.max(r,g,b),mn=Math.min(r,g,b);let h,s,l=(mx+mn)/2;if(mx===mn){h=s=0}else{const d=mx-mn;s=l>.5?d/(2-mx-mn):d/(mx+mn);switch(mx){case r:h=(g-b)/d+(g<b?6:0);break;case g:h=(b-r)/d+2;break;default:h=(r-g)/d+4}h/=6}return[h*360,s,l]}
+function hsl2rgb(h,s,l){h/=360;let r,g,b;if(s===0){r=g=b=l}else{const q=l<.5?l*(1+s):l+s-l*s,p=2*l-q;const t=(t)=>{if(t<0)t+=1;if(t>1)t-=1;if(t<1/6)return p+(q-p)*6*t;if(t<1/2)return q;if(t<2/3)return p+(q-p)*(2/3-t)*6;return p};r=t(h+1/3);g=t(h);b=t(h-1/3)}return[r*255,g*255,b*255]}
+function recolor(srcCanvas,a,maxSize,protectPink){const w=srcCanvas.width,h=srcCanvas.height;let tw=w,th=h;if(maxSize&&Math.max(w,h)>maxSize){const k=maxSize/Math.max(w,h);tw=Math.round(w*k);th=Math.round(h*k)}const o=document.createElement('canvas');o.width=tw;o.height=th;const oc=o.getContext('2d');oc.drawImage(srcCanvas,0,0,tw,th);let id;try{id=oc.getImageData(0,0,tw,th)}catch(e){return srcCanvas}const d=id.data;const hShift=a.h,sMul=a.s/100,lOff=a.l/100;for(let i=0;i<d.length;i+=4){if(d[i+3]<8)continue;let[H,S,L]=rgb2hsl(d[i],d[i+1],d[i+2]);if(L<0.16)continue;if(L>0.93&&S<0.15)continue;if(protectPink&&S>0.30&&(H>=325||H<=18)&&L>0.28&&L<0.82)continue;H=(H+hShift)%360;if(H<0)H+=360;S=Math.max(0,Math.min(1,S*sMul));L=Math.max(0,Math.min(1,L+lOff));const[r,g,b]=hsl2rgb(H,S,L);d[i]=r;d[i+1]=g;d[i+2]=b}oc.putImageData(id,0,0);return o}
+function imgToCanvas(img){const c=document.createElement('canvas');c.width=img.naturalWidth;c.height=img.naturalHeight;c.getContext('2d').drawImage(img,0,0);return c}
+function sig(a){return a.h+'|'+a.s+'|'+a.l}
+function layerSource(key,opt,maxSize){const a=adjust[key];if(!a||(a.h===0&&a.s===100&&a.l===0))return opt.img;const s=key+sig(a)+'@'+(maxSize||'full');const c=recolorCache.get(opt.img);if(c&&c.sig===s)return c.canvas;if(!opt._base)opt._base=imgToCanvas(opt.img);const out=recolor(opt._base,a,maxSize,key==='corpo');recolorCache.set(opt.img,{sig:s,canvas:out});return out}
+
+/* ---------- painel construtor ---------- */
+function buildPanel(){panel.innerHTML='';LAYERS.forEach(l=>{
+ const box=document.createElement('div');box.className='layer';
+ box.innerHTML=`<div class="layer-head"><div class="layer-title">${l.name}</div><span class="zbadge">camada ${l.z+1}</span></div>`;
+ const rail=document.createElement('div');rail.className='rail';
+ if(l.optional){const none=document.createElement('div');none.className='chip chip-none'+(state[l.key].sel===-1?' sel':'');none.textContent='—';none.onclick=()=>{state[l.key].sel=-1;refresh()};rail.appendChild(none)}
+ if(l.solid){const sc=document.createElement('div');sc.className='chip chip-solid'+(state[l.key].sel==='solid'?' sel':'');sc.style.background=state[l.key].solid||'#888';sc.textContent='cor';sc.onclick=()=>{if(!state[l.key].solid)state[l.key].solid='#C8C8C8';state[l.key].sel='solid';refresh()};rail.appendChild(sc)}
+ state[l.key].options.forEach((opt,i)=>{const c=document.createElement('div');c.className='chip'+(state[l.key].sel===i?' sel':'');const im=document.createElement('img');im.src=opt.img.src;c.appendChild(im);c.onclick=()=>{state[l.key].sel=i;refresh()};c.title=opt.name;rail.appendChild(c)});
+ box.appendChild(rail);
+ if(l.solid){const cp=document.createElement('div');cp.className='colorpick';const inpc=document.createElement('input');inpc.type='color';inpc.value=state[l.key].solid||'#C8C8C8';inpc.oninput=()=>{state[l.key].solid=inpc.value;state[l.key].sel='solid';refresh();const sc=box.querySelector('.chip-solid');if(sc)sc.style.background=inpc.value};const sm=document.createElement('small');sm.textContent='cor do fundo';cp.appendChild(inpc);cp.appendChild(sm);const sw=document.createElement('div');sw.className='swatches';sw.style.marginTop='9px';FUNDO_CORES.forEach(col=>{const b=document.createElement('button');b.className='sw';b.style.background=col;b.onclick=()=>{state[l.key].solid=col;state[l.key].sel='solid';inpc.value=col;refresh();const sc=box.querySelector('.chip-solid');if(sc)sc.style.background=col};sw.appendChild(b)});box.appendChild(cp);box.appendChild(sw)}
+ if(l.recolor&&state[l.key].options.length){const presets=l.recolor==='pelo'?FUR_PRESETS:EYE_PRESETS;const title=l.recolor==='pelo'?'Cor do pelo':'Cor da íris';const ak=l.key;const rc=document.createElement('div');rc.className='recolor';rc.innerHTML=`<div class="recolor-top"><span>${title}</span><button class="reset-c">resetar</button></div>`;const sw=document.createElement('div');sw.className='swatches';presets.forEach(p=>{const b=document.createElement('button');b.className='sw';b.style.background=p.c;b.title=p.name;b.onclick=()=>{adjust[ak]={...p.a};syncSliders();refresh()};sw.appendChild(b)});rc.appendChild(sw);rc.appendChild(slider('Matiz',ak,'h',-180,180,'°'));rc.appendChild(slider('Saturação',ak,'s',0,200,'%'));rc.appendChild(slider('Brilho',ak,'l',-50,50,''));box.appendChild(rc);rc.querySelector('.reset-c').onclick=()=>{adjust[ak]={h:0,s:100,l:0};syncSliders();refresh()}}
+ panel.appendChild(box)})}
+function slider(label,ak,key,min,max,unit){const row=document.createElement('div');row.className='sld';row.innerHTML=`<label>${label}</label><input type="range" min="${min}" max="${max}" value="${adjust[ak][key]}" data-ak="${ak}" data-k="${key}"><output>${adjust[ak][key]}${unit}</output>`;const r=row.querySelector('input'),o=row.querySelector('output');r.addEventListener('input',()=>{adjust[ak][key]=+r.value;o.textContent=r.value+unit;scheduleRefresh()});return row}
+function syncSliders(){document.querySelectorAll('.sld input').forEach(r=>{const ak=r.dataset.ak,k=r.dataset.k;r.value=adjust[ak][k];r.nextElementSibling.textContent=adjust[ak][k]+(k==='h'?'°':k==='s'?'%':'')})}
+let raf=null;function scheduleRefresh(){if(raf)return;raf=requestAnimationFrame(()=>{raf=null;refresh()})}
+function drawAll(tctx,size,full){tctx.clearRect(0,0,size,size);let any=false;LAYERS.forEach(l=>{const s=state[l.key];if(l.solid&&s.sel==='solid'&&s.solid){tctx.fillStyle=s.solid;tctx.fillRect(0,0,size,size);any=true;return}if(typeof s.sel!=='number'||s.sel<0||!s.options[s.sel])return;const opt=s.options[s.sel];let src=opt.img;if(l.recolor)src=layerSource(l.key,opt,full?null:1400);tctx.drawImage(src,0,0,size,size);any=true});return any}
+function refresh(){const any=drawAll(ctx,cv.width,false);hint.style.display=any?'none':'flex';const parts=LAYERS.filter(l=>state[l.key].sel!==-1&&!(state[l.key].sel==='solid'&&!state[l.key].solid)).map(l=>{const s=state[l.key];let v;if(s.sel==='solid')v=s.solid;else{const o=s.options[s.sel];if(!o)return null;v=o.name}if(l.recolor&&adjust[l.key]&&!(adjust[l.key].h===0&&adjust[l.key].s===100&&adjust[l.key].l===0))v+=' (cor ajustada)';return `<b>${l.name}:</b> ${v}`}).filter(Boolean);traitsEl.innerHTML=parts.length?parts.join(' &nbsp;·&nbsp; '):'';document.querySelectorAll('#panel .layer').forEach((box,li)=>{const l=LAYERS[li],chips=box.querySelectorAll('.chip');let idx=0;if(l.optional){chips[idx]&&chips[idx].classList.toggle('sel',state[l.key].sel===-1);idx++}if(l.solid){chips[idx]&&chips[idx].classList.toggle('sel',state[l.key].sel==='solid');idx++}state[l.key].options.forEach((_,i)=>{if(chips[idx+i])chips[idx+i].classList.toggle('sel',state[l.key].sel===i)})})}
+document.getElementById('rand').onclick=()=>{LAYERS.forEach(l=>{const n=state[l.key].options.length;if(!n){state[l.key].sel=-1;return}if(l.optional&&Math.random()<0.20)state[l.key].sel=-1;else state[l.key].sel=Math.floor(Math.random()*n)});buildPanel();refresh()};
+document.getElementById('clear').onclick=()=>{LAYERS.forEach(l=>state[l.key].sel=l.optional?-1:(state[l.key].options.length?0:-1));buildPanel();refresh()};
+document.getElementById('dl').onclick=()=>{const out=document.createElement('canvas');out.width=out.height=2048;drawAll(out.getContext('2d'),2048,true);const nm='bunny_'+LAYERS.filter(l=>typeof state[l.key].sel==='number'&&state[l.key].sel>-1).map(l=>state[l.key].options[state[l.key].sel].name).join('-').slice(0,80);out.toBlob(b=>{const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=(nm||'bunny')+'.png';a.click()},'image/png')};
+
+/* ---------- biblioteca (upload/lista/delete) ---------- */
+function fillCats(){const sel=document.getElementById('upCat');sel.innerHTML='';LAYERS.forEach(l=>{const o=document.createElement('option');o.value=l.key;o.textContent=l.name;sel.appendChild(o)})}
+const drop=document.getElementById('drop'),upFile=document.getElementById('upFile'),upStatus=document.getElementById('upStatus');
+drop.onclick=()=>upFile.click();
+drop.ondragover=e=>{e.preventDefault();drop.style.borderColor='var(--accent)'};
+drop.ondragleave=()=>drop.style.borderColor='';
+drop.ondrop=e=>{e.preventDefault();drop.style.borderColor='';handleUpload(e.dataTransfer.files)};
+upFile.onchange=e=>handleUpload(e.target.files);
+async function handleUpload(files){
+ if(!dbOn){upStatus.textContent='Configure o Supabase primeiro (bloco CONFIG no código).';return}
+ const cat=document.getElementById('upCat').value, rar=document.getElementById('upRar').value, weight=RAR_WEIGHT[rar];
+ let done=0;
+ for(const f of files){
+   const safe=f.name.replace(/\.(png|webp)$/i,'').replace(/[^a-z0-9_-]+/gi,'_').toLowerCase();
+   const path=`${cat}/${Date.now()}_${safe}.png`;
+   upStatus.textContent=`Enviando ${f.name}…`;
+   const up=await sb.storage.from(CONFIG.BUCKET).upload(path,f,{contentType:f.type||'image/png',upsert:false});
+   if(up.error){upStatus.textContent='Erro no upload: '+up.error.message;continue}
+   const url=sb.storage.from(CONFIG.BUCKET).getPublicUrl(path).data.publicUrl;
+   const ins=await sb.from(CONFIG.TABLE).insert({category:cat,name:safe,rarity:rar,weight,storage_path:path,url}).select().single();
+   if(ins.error){upStatus.textContent='Erro no banco: '+ins.error.message;continue}
+   try{const img=await loadImg(url);state[cat].options.push({name:safe,img,dbId:ins.data.id,path,rarity:rar,weight});}catch(e){}
+   done++;
+ }
+ upStatus.textContent=`✓ ${done} peça(s) salva(s) em "${cat}".`;
+ buildPanel();refresh();buildLibrary();
+}
+async function deletePiece(cat,opt){
+ if(!confirm('Apagar "'+opt.name+'"?'))return;
+ if(opt.path)await sb.storage.from(CONFIG.BUCKET).remove([opt.path]);
+ if(opt.dbId)await sb.from(CONFIG.TABLE).delete().eq('id',opt.dbId);
+ const arr=state[cat].options;const i=arr.indexOf(opt);if(i>-1)arr.splice(i,1);
+ if(state[cat].sel===i)state[cat].sel=-1;
+ buildPanel();refresh();buildLibrary();
+}
+function buildLibrary(){
+ const wrapEl=document.getElementById('libList');wrapEl.innerHTML='';
+ LAYERS.forEach(l=>{const opts=state[l.key].options;const cat=document.createElement('div');cat.className='libcat';
+  cat.innerHTML=`<h3>${l.name} <span class="count">${opts.length}</span></h3>`;
+  const g=document.createElement('div');g.className='libgrid';
+  if(!opts.length){const e=document.createElement('div');e.style.cssText='color:var(--mute);font-size:12px';e.textContent='— vazio —';g.appendChild(e)}
+  opts.forEach(opt=>{const it=document.createElement('div');it.className='libitem';
+    it.innerHTML=`<img class="thumb" src="${opt.img.src}"><div class="nm">${opt.name}</div><div class="rr">${opt.rarity||''} ${opt.weight?'· peso '+opt.weight:''}</div>`;
+    const del=document.createElement('button');del.className='del';del.textContent='×';del.onclick=()=>deletePiece(l.key,opt);it.appendChild(del);g.appendChild(it)});
+  cat.appendChild(g);wrapEl.appendChild(cat)})}
+
+/* ---------- tabs ---------- */
+document.getElementById('tabBuild').onclick=()=>{switchTab('build')};
+document.getElementById('tabLib').onclick=()=>{switchTab('lib')};
+function switchTab(t){const bv=document.getElementById('builderView'),lv=document.getElementById('libView');
+ document.getElementById('tabBuild').classList.toggle('on',t==='build');document.getElementById('tabLib').classList.toggle('on',t==='lib');
+ bv.classList.toggle('off',t!=='build');lv.classList.toggle('on',t==='lib');}
+
+/* ---------- init ---------- */
+fillCats();buildPanel();refresh();buildLibrary();initDB();loadFromDB();
+</script>
+</body>
+</html>
